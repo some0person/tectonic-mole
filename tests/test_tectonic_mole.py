@@ -322,6 +322,32 @@ class TectonicMoleUnitTests(unittest.TestCase):
         # Assert
         self.assertEqual(mole.energy, 0.0)
 
+    def test_public_attributes_are_read_only(self):
+        """TC-27: публичное состояние меняется только методами транспорта."""
+        # Arrange
+        mole = make_mole(energy=50.0)
+        expected = {
+            "name": "Тектоник",
+            "mass_kg": 900.0,
+            "drill_diameter_m": 2.0,
+            "max_speed_kmh": 50.0,
+            "energy": 50.0,
+            "position_km": 0.0,
+            "is_drilling": False,
+        }
+
+        # Act / Assert
+        for attribute, value in expected.items():
+            with self.subTest(attribute=attribute):
+                with self.assertRaises(AttributeError):
+                    setattr(mole, attribute, value)
+                self.assertEqual(getattr(mole, attribute), value)
+
+        mole.move(10, "ground")
+        mole.refuel(5)
+        self.assertEqual(mole.position_km, 10.0)
+        self.assertEqual(mole.energy, 45.0)
+
     def test_numeric_input_contract(self):
         """TC-25: числовые входы принимают int/float, но не bool и не non-finite."""
         # Arrange

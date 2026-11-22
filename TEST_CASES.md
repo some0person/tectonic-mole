@@ -32,6 +32,7 @@
 | TC-20 | SPEC 3.2 | - | строковое имя, положительные параметры, energy=0 | объект создан | medium | `test_init_accepts_lower_energy_boundary` |
 | TC-25 | SPEC 3.2, 3.4.1, 3.4.3, 3.4.4 | созданный транспорт | неверные типы, `bool`, `NaN`, бесконечность; числовые `int`/`float` | `TypeError` для неверного типа и `ValueError` для non-finite; состояние не меняется | high | `test_numeric_input_contract` |
 | TC-26 | SPEC 3.4.2 | положительные параметры | диаметры `0.99/1.0/1.01` для boulder и `1.99/2.0/2.01` для ravine | `False/True/True` на каждой границе | high | `test_obstacle_diameter_thresholds` |
+| TC-27 | SPEC 3.3 | созданный транспорт | попытка присвоить каждому публичному атрибуту | `AttributeError`; состояния меняются штатными методами | high | `test_public_attributes_are_read_only` |
 
 ## Сценарные тесты
 

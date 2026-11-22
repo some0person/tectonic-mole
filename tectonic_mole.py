@@ -94,14 +94,41 @@ class TectonicMole:
         if not (_ENERGY_MIN <= energy_value <= _ENERGY_MAX):
             raise ValueError("energy must be in [0, 100]")
 
-        self.name: str = name
-        self.mass_kg: float = mass
-        self.drill_diameter_m: float = drill
-        self.max_speed_kmh: float = speed
-        self.energy: float = energy_value
-        self.position_km: float = 0.0
-        self.is_drilling: bool = False
+        self._name = name
+        self._mass_kg = mass
+        self._drill_diameter_m = drill
+        self._max_speed_kmh = speed
+        self._energy = energy_value
+        self._position_km = 0.0
+        self._is_drilling = False
 
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def mass_kg(self) -> float:
+        return self._mass_kg
+
+    @property
+    def drill_diameter_m(self) -> float:
+        return self._drill_diameter_m
+
+    @property
+    def max_speed_kmh(self) -> float:
+        return self._max_speed_kmh
+
+    @property
+    def energy(self) -> float:
+        return self._energy
+
+    @property
+    def position_km(self) -> float:
+        return self._position_km
+
+    @property
+    def is_drilling(self) -> bool:
+        return self._is_drilling
 
     def _validate_distance(self, distance_km: Any) -> float:
         distance = _validate_finite(distance_km, "distance_km")
@@ -140,11 +167,11 @@ class TectonicMole:
         speed = self._speed_for(terrain_value)
         elapsed_hours = distance / speed
 
-        self.position_km += distance
-        self.energy -= cost
-        if self.energy < 0 and self.energy > -1e-9:
-            self.energy = 0.0
-        self.is_drilling = terrain_value == "tunnel"
+        self._position_km += distance
+        self._energy -= cost
+        if self._energy < 0 and self._energy > -1e-9:
+            self._energy = 0.0
+        self._is_drilling = terrain_value == "tunnel"
         return elapsed_hours
 
     def can_overcome(self, obstacle: str) -> bool:
@@ -169,7 +196,7 @@ class TectonicMole:
         amount_value = _validate_finite(amount, "amount")
         if amount_value <= 0:
             raise ValueError("amount must be > 0")
-        self.energy = min(self.energy + amount_value, _ENERGY_MAX)
+        self._energy = min(self.energy + amount_value, _ENERGY_MAX)
 
     def get_status(self) -> dict:
         """Возвращает независимый снимок публичного состояния."""
