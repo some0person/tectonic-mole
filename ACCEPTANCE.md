@@ -1,7 +1,7 @@
 # Приёмка реализации
 
-Дата: **22.11.2026**  
-Реализация: [tectonic_mole.py](tectonic_mole.py), роль D  
+Дата: **22.11.2026**
+Реализация: [tectonic_mole.py](tectonic_mole.py), роль D
 Контракт: SPEC 1.0 и [TEST_CASES.md](TEST_CASES.md)
 
 ## Результат
