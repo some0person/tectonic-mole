@@ -1,5 +1,6 @@
 """Контрактные тесты роли A для гусеничного крота "Тектоник"."""
 
+import math
 import unittest
 
 from tectonic_mole import (
@@ -216,10 +217,12 @@ class TectonicMoleUnitTests(unittest.TestCase):
 
         # Act
         boulder = mole.can_overcome("boulder")
+        landslide = mole.can_overcome("landslide")
         ravine = mole.can_overcome("ravine")
 
         # Assert
         self.assertTrue(boulder)
+        self.assertTrue(landslide)
         self.assertTrue(ravine)
         self.assertEqual(
             (mole.position_km, mole.energy, mole.is_drilling),
@@ -291,6 +294,19 @@ class TectonicMoleUnitTests(unittest.TestCase):
         self.assertTrue(status["is_drilling"])
         self.assertEqual(status["drill_diameter_m"], 1.5)
 
+        status["energy"] = 0.0
+        status["position_km"] = 999.0
+        status["is_drilling"] = False
+        del status["name"]
+
+        self.assertEqual(mole.energy, 20.0)
+        self.assertEqual(mole.position_km, 10.0)
+        self.assertTrue(mole.is_drilling)
+        self.assertEqual(mole.get_status()["name"], "Тектоник")
+        self.assertEqual(mole.get_status()["energy"], 20.0)
+        self.assertEqual(mole.get_status()["position_km"], 10.0)
+        self.assertTrue(mole.get_status()["is_drilling"])
+
     def test_domain_exceptions_have_expected_hierarchy(self):
         """TC-19: ошибки домена отделены от стандартных ошибок параметров."""
         # Arrange / Act / Assert
@@ -306,6 +322,71 @@ class TectonicMoleUnitTests(unittest.TestCase):
         # Assert
         self.assertEqual(mole.energy, 0.0)
 
+    def test_numeric_input_contract(self):
+        """TC-25: числовые входы принимают int/float, но не bool и не non-finite."""
+        # Arrange
+        mole = make_mole()
+        before = (mole.position_km, mole.energy)
+
+        integer_parameters = make_mole(
+            mass_kg=900,
+            drill_diameter_m=2,
+            max_speed_kmh=50,
+            energy=50,
+        )
+        self.assertEqual(integer_parameters.energy, 50.0)
+
+        # Act / Assert: constructor type and finite-value validation
+        for kwargs in (
+            {"name": 123},
+            {"mass_kg": "900"},
+            {"energy": None},
+            {"energy": True},
+            {"energy": math.nan},
+            {"energy": math.inf},
+        ):
+            with self.subTest(kwargs=kwargs):
+                with self.assertRaises(
+                    ValueError if isinstance(next(iter(kwargs.values())), float)
+                    and not math.isfinite(next(iter(kwargs.values())))
+                    else TypeError
+                ):
+                    make_mole(**kwargs)
+
+        invalid_calls = (
+            (lambda: mole.move("10", "ground"), TypeError),
+            (lambda: mole.move(10, 5), TypeError),
+            (lambda: mole.move(True, "ground"), TypeError),
+            (lambda: mole.calculate_energy(None, "ground"), TypeError),
+            (lambda: mole.calculate_energy(math.nan, "ground"), ValueError),
+            (lambda: mole.can_overcome(5), TypeError),
+            (lambda: mole.refuel("20"), TypeError),
+            (lambda: mole.refuel(False), TypeError),
+            (lambda: mole.refuel(math.inf), ValueError),
+        )
+        for call, expected in invalid_calls:
+            with self.subTest(call=call):
+                with self.assertRaises(expected):
+                    call()
+
+        self.assertEqual((mole.position_km, mole.energy), before)
+
+    def test_obstacle_diameter_thresholds(self):
+        """TC-26: границы диаметра бура проверяются ниже, на и выше порога."""
+        # Arrange / Act / Assert
+        for diameter, expected in ((0.99, False), (1.0, True), (1.01, True)):
+            with self.subTest(obstacle="boulder", diameter=diameter):
+                self.assertEqual(
+                    make_mole(drill_diameter_m=diameter).can_overcome("boulder"),
+                    expected,
+                )
+        for diameter, expected in ((1.99, False), (2.0, True), (2.01, True)):
+            with self.subTest(obstacle="ravine", diameter=diameter):
+                self.assertEqual(
+                    make_mole(drill_diameter_m=diameter).can_overcome("ravine"),
+                    expected,
+                )
+
 
 class TectonicMoleScenarioTests(unittest.TestCase):
     def test_TC_21_tunnel_under_railway(self):
@@ -319,7 +400,7 @@ class TectonicMoleScenarioTests(unittest.TestCase):
         self.assertFalse(pilot.vehicle.is_drilling)
 
         # When / Then
-        self.assertEqual(pilot.bore(6), 6 / 30)
+        self.assertAlmostEqual(pilot.bore(6), 6 / 30)
         self.assertEqual(pilot.vehicle.position_km, 16.0)
         self.assertEqual(pilot.vehicle.energy, 42.0)
         self.assertTrue(pilot.vehicle.is_drilling)
